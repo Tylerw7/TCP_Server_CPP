@@ -42,5 +42,16 @@ int main() {
     std::cout << "Client connected!\n";
     std::cout << "Client socket: " << client_fd << "\n";
 
+    char buffer [4096]; // array of 4096 characters (bytes) in memory
+    int bytes_recieved = recv(
+        client_fd,
+        buffer,
+        sizeof(buffer),
+        0
+    );
+
+    std::cout << "Bytes recieved: " << bytes_recieved << "\n";
+    std::cout.write(buffer, bytes_recieved);
+
     return 0;
 }
