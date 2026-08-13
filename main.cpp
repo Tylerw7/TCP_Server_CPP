@@ -23,7 +23,7 @@ int main() {
     server_address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     // Set the Port
-    server_address.sin_port = 8080;
+    server_address.sin_port = htons(8080);
 
     int result = bind(
         server_fd,
@@ -31,7 +31,16 @@ int main() {
         sizeof(server_address)
     );
 
-    std::cout << "Socket: " << result << "\n";
+    std::cout << "Bind result: " << result << "\n";
+
+    result = listen(server_fd,10);
+
+    std::cout << "Listen result: " << result << "\n";
+
+    int client_fd = accept(server_fd, nullptr, nullptr);
+
+    std::cout << "Client connected!\n";
+    std::cout << "Client socket: " << client_fd << "\n";
 
     return 0;
 }
