@@ -1,6 +1,9 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <cstring>
+#include <string>
+#include <sstream>
 
 
 int main() {
@@ -49,6 +52,44 @@ int main() {
         sizeof(buffer),
         0
     );
+
+    //Parse HTTP request
+
+    std::string request(buffer, bytes_recieved); // To get the length
+    size_t end_of_line = request.find("\r\n");
+    std::string request_line = request.substr(0, end_of_line);
+    std::istringstream stream(request_line);
+
+    std::string method;
+    std::string path;
+    std::string version;
+
+    stream >> method >> path >> version;
+
+    std::cout << "Method: " << method << '\n';
+    std::cout << "Path: " << path << '\n';
+    std::cout << "Version: " << version << '\n';
+
+    if (method == "GET" && path == "/") {
+        const char* response = 
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/plain\r\n"
+            "Content-Length: 12\r\n"
+            "\r\n"
+            "New Message 1";
+
+        send(client_fd, response, strlen(response),0);    
+    }
+
+    const char* response =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/plain\r\n"
+        "Content-Length: 12\r\n"
+        "\r\n"
+        "Hello world!";
+
+    send(client_fd, response, strlen(response),0);    
+
 
     std::cout << "Bytes recieved: " << bytes_recieved << "\n";
     std::cout.write(buffer, bytes_recieved);
