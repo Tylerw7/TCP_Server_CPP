@@ -8,6 +8,7 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include "HttpRequest.h"
 
 
 // Global Variables
@@ -24,7 +25,7 @@ void handle_signal(int signal) {
 bool send_all(int socket_fd, const char* data, size_t length);
 
 int main() {
-    std::cout << running;
+    
     std::signal(SIGINT, handle_signal);
 
     // What's Happening?
@@ -116,12 +117,12 @@ int main() {
         char buffer[4096];
 
         // Store the complete HTTP request
-        std::string request;
+        std::string raw_request;
 
         // Keep receiving until we've received
         // the end of the HTTP headers.
         // ------ RECIEVE LOOP ------
-        while (request.find("\r\n\r\n") == std::string::npos) {
+        while (raw_request.find("\r\n\r\n") == std::string::npos) {
 
             ssize_t bytes_received = recv(
                 client_fd,
@@ -140,29 +141,26 @@ int main() {
                 break;
             }
 
-            request.append(buffer, bytes_received);
+            raw_request.append(buffer, bytes_received);
         }
 
-        // Parse HTTP request
-
-        size_t end_of_line = request.find("\r\n");
+        // Parse HTTP request ------------------------------
+        size_t end_of_line = raw_request.find("\r\n");
 
         if (end_of_line != std::string::npos) {
 
             std::string request_line =
-                request.substr(0, end_of_line);
+                raw_request.substr(0, end_of_line);
 
             std::istringstream stream(request_line);
 
-            std::string method;
-            std::string path;
-            std::string version;
+            HttpRequest request;
 
-            stream >> method >> path >> version;
+            stream >> request.method >> request.path >> request.version;
 
-            std::cout << "Method: " << method << '\n';
-            std::cout << "Path: " << path << '\n';
-            std::cout << "Version: " << version << '\n';
+            std::cout << "Method: " << request.method << '\n';
+            std::cout << "Path: " << request.path << '\n';
+            std::cout << "Version: " << request.version << '\n';
 
             // Temporary HTTP response
             const char* response =
@@ -185,7 +183,7 @@ int main() {
     }
 
     close(server_fd);
-    std::cout << running;
+    
 
     return 0;
 }
