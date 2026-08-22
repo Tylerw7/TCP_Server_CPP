@@ -149,20 +149,101 @@ int main() {
 
         if (end_of_line != std::string::npos) {
 
+            // -------------------------
+            // Parse request line
+            // -------------------------
+
             std::string request_line =
                 raw_request.substr(0, end_of_line);
 
-            std::istringstream stream(request_line);
+            std::istringstream request_stream(request_line);
 
             HttpRequest request;
 
-            stream >> request.method >> request.path >> request.version;
+            request_stream
+                >> request.method
+                >> request.path
+                >> request.version;
 
-            std::cout << "Method: " << request.method << '\n';
-            std::cout << "Path: " << request.path << '\n';
-            std::cout << "Version: " << request.version << '\n';
+
+            // -------------------------
+            // Parse headers
+            // -------------------------
+
+            size_t header_start = end_of_line + 2;
+
+            while (true) {
+
+                size_t header_end =
+                    raw_request.find("\r\n", header_start);
+
+                if (header_end == std::string::npos) {
+                    break;
+                }
+
+                // Empty line means we've reached
+                // the end of the headers.
+                if (header_end == header_start) {
+                    break;
+                }
+
+                std::string header_line =
+                    raw_request.substr(
+                        header_start,
+                        header_end - header_start
+                    );
+
+                size_t colon =
+                    header_line.find(':');
+
+                if (colon != std::string::npos) {
+
+                    std::string name =
+                        header_line.substr(0, colon);
+
+                    std::string value =
+                        header_line.substr(colon + 1);
+
+                    // Remove leading space from value
+                    if (!value.empty() && value[0] == ' ') {
+                        value.erase(0, 1);
+                    }
+
+                    request.headers[name] = value;
+                }
+
+                header_start = header_end + 2;
+            }
+
+
+            // -------------------------
+            // Print parsed request
+            // -------------------------
+
+            std::cout << "Method: "
+                    << request.method << '\n';
+
+            std::cout << "Path: "
+                    << request.path << '\n';
+
+            std::cout << "Version: "
+                    << request.version << '\n';
+
+
+            std::cout << "\nHeaders:\n";
+
+            for (const auto& header : request.headers) {
+
+                std::cout
+                    << header.first
+                    << " = "
+                    << header.second
+                    << '\n';
+            }
+
 
             // Temporary HTTP response
+
             const char* response =
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: text/plain\r\n"
