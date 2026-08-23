@@ -7,5 +7,5 @@ class HttpParser {
 
     public:
         
-        HttpRequest parse(const std::string& raw_request);
+        bool parse(const std::string& raw_request, HttpRequest& request);
 };

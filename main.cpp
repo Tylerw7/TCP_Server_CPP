@@ -98,6 +98,7 @@ int main() {
     // HTTPPARSER
     // ------------------------------------
     HttpParser parser;
+    HttpRequest request;
 
     // Keep accepting clients
     while (running) {
@@ -153,8 +154,21 @@ int main() {
         }
 
         // Parse HTTP request ------------------------------
-        HttpRequest request =
-            parser.parse(raw_request);
+        bool parsed =
+            parser.parse(
+                raw_request,
+                request
+            );
+
+        if (!parsed) {
+
+            std::cerr
+                << "Failed to parse HTTP request\n";
+
+            close(client_fd);
+
+            continue;
+        }
 
 
         // -----------------------------------------------------
