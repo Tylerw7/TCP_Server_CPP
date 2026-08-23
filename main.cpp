@@ -98,7 +98,7 @@ int main() {
     // HTTPPARSER
     // ------------------------------------
     HttpParser parser;
-    HttpRequest request;
+    
 
     // Keep accepting clients
     while (running) {
@@ -133,6 +133,7 @@ int main() {
         // ------ RECIEVE LOOP ------
         while (raw_request.find("\r\n\r\n") == std::string::npos) {
 
+
             ssize_t bytes_received = recv(
                 client_fd,
                 buffer,
@@ -152,6 +153,7 @@ int main() {
 
             raw_request.append(buffer, bytes_received);
         }
+        HttpRequest request;
 
         // Parse HTTP request ------------------------------
         bool parsed =

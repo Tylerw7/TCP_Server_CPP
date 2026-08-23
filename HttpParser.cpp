@@ -1,6 +1,18 @@
 #include "HttpParser.h"
 
+#include <algorithm>
 #include <sstream>
+
+bool is_valid_method(std::string& method) {
+    return method == "GET"
+        || method == "POST"
+        || method == "PUT"
+        || method == "PATCH"
+        || method == "DELETE"
+        || method == "HEAD"
+        || method == "OPTIONS";
+
+}
 
 bool HttpParser::parse(
     const std::string& raw_request,
@@ -41,6 +53,8 @@ bool HttpParser::parse(
 
         return false;
     }
+
+    if (!is_valid_method(request.method)) return false;
 
 
     // ---------------------------------------------------------
