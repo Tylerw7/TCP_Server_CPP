@@ -12,6 +12,7 @@
 
 #include "HttpRequest.h"
 #include "HttpParser.h"
+#include "HttpResponseBuilder.h"
 
 
 // Global Variables
@@ -95,9 +96,10 @@ int main() {
     std::cout << "Server listening on http://localhost:8080\n";
 
     // ------------------------------------
-    // HTTPPARSER
+    // HTTPPARSER & Builder
     // ------------------------------------
     HttpParser parser;
+    HttpResponseBuilder response_builder;
     
 
     // Keep accepting clients
@@ -210,18 +212,23 @@ int main() {
         // TEMPORARY HTTP RESPONSE
         // -----------------------------------------------------
 
-        const char* response =
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/plain\r\n"
-            "Content-Length: 21\r\n"
-            "\r\n"
-            "Server is running hi!";
+        HttpResponse response;
+
+        response.status_code = 200;
+        response.status_text = "OK";
+        response.headers["Content-Type"] = "text/plain";
+        response.body = "This is Tylers server";
+
+        response.headers["Content-Length"] = std::to_string(response.body.size());
+
+        // Build Response
+        std::string response_data = response_builder.build(response);
 
 
         send_all(
             client_fd,
-            response,
-            strlen(response)
+            response_data.c_str(),
+            response_data.size()
         );
 
 
