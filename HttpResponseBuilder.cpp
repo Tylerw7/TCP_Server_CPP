@@ -10,9 +10,9 @@ std::string HttpResponseBuilder::build(
     // Status line
     output
         << "HTTP/1.1 "
-        << response.status_code
+        << static_cast<int>(response.status)
         << " "
-        << response.status_text
+        << status_text(response.status)
         << "\r\n";
 
     // Headers

@@ -214,9 +214,10 @@ int main() {
 
         HttpResponse response;
 
-        response.status_code = 200;
-        response.status_text = "OK";
+        response.status = HttpStatus::OK;
+
         response.headers["Content-Type"] = "text/plain";
+
         response.body = "This is Tylers server";
 
         response.headers["Content-Length"] = std::to_string(response.body.size());
