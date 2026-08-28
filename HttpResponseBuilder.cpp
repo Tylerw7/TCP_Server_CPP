@@ -24,6 +24,11 @@ std::string HttpResponseBuilder::build(
             << "\r\n";
     }
 
+    output 
+        << "Content-Length: "
+        << response.body.size()
+        << "\r\n";
+
     // End of headers
     output << "\r\n";
 

@@ -218,9 +218,8 @@ int main() {
 
         response.headers["Content-Type"] = "text/plain";
 
-        response.body = "This is Tylers server";
+        response.body = "This is Tylers server, this is a test";
 
-        response.headers["Content-Length"] = std::to_string(response.body.size());
 
         // Build Response
         std::string response_data = response_builder.build(response);
