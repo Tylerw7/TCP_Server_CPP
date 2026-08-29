@@ -214,12 +214,18 @@ int main() {
 
         HttpResponse response;
 
-        response.status = HttpStatus::OK;
+        if (request.path == "/") {
 
-        response.headers["Content-Type"] = "text/plain";
+            response.status = HttpStatus::OK;
+            response.headers["Content-Type"] = "text/plain";
+            response.body = "Welcome to Tylers server";
 
-        response.body = "This is Tylers server, this is a test";
+        } else {
 
+            response.status = HttpStatus::NotFound;
+            response.headers["Content-Type"] = "text/plain";
+            response.body = "404 - Not Found";
+        }
 
         // Build Response
         std::string response_data = response_builder.build(response);
