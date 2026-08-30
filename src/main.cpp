@@ -13,6 +13,7 @@
 #include "HttpRequest.h"
 #include "HttpParser.h"
 #include "HttpResponseBuilder.h"
+#include "Router.h"
 
 
 // Global Variables
@@ -27,6 +28,8 @@ void handle_signal(int signal) {
 
 // Declared functions
 bool send_all(int socket_fd, const char* data, size_t length);
+
+
 
 int main() {
     
@@ -100,6 +103,14 @@ int main() {
     // ------------------------------------
     HttpParser parser;
     HttpResponseBuilder response_builder;
+
+
+    // Test router methods
+    Router router;
+
+    router.get("/hello");
+    std::cout << router.matches("GET", "/hello") << '\n';
+
     
 
     // Keep accepting clients
