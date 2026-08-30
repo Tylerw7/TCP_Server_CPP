@@ -3,9 +3,11 @@
 #include <string>
 #include <functional>
 
+#include "HttpResponse.h"
+
 struct Route {
     std::string method;
     std::string path;
 
-    std::function<void()> handler;
+    std::function<HttpResponse()> handler;
 };

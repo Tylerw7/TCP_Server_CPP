@@ -105,11 +105,31 @@ int main() {
     HttpResponseBuilder response_builder;
 
 
-    // Test router methods
+    // test routes
     Router router;
 
-    router.get("/hello");
-    std::cout << router.matches("GET", "/hello") << '\n';
+    router.get("/", []() {
+
+        HttpResponse response;
+
+        response.status = HttpStatus::OK;
+        response.headers["Content-Type"] = "text/plain";
+        response.body = "Welcome to Tylers server from '/'";
+
+        return response;
+    });
+
+
+    router.get("/hello", []() {
+
+        HttpResponse response;
+
+        response.status = HttpStatus::OK;
+        response.headers["Content-Type"] = "text/plain";
+        response.body = "Hello from the /hello route!";
+
+        return response;
+    });
 
     
 
@@ -223,20 +243,11 @@ int main() {
         // TEMPORARY HTTP RESPONSE
         // -----------------------------------------------------
 
-        HttpResponse response;
-
-        if (request.path == "/") {
-
-            response.status = HttpStatus::OK;
-            response.headers["Content-Type"] = "text/plain";
-            response.body = "Welcome to Tylers server";
-
-        } else {
-
-            response.status = HttpStatus::NotFound;
-            response.headers["Content-Type"] = "text/plain";
-            response.body = "404 - Not Found";
-        }
+        HttpResponse response =
+            router.handle(
+                request.method,
+                request.path
+            );
 
         // Build Response
         std::string response_data = response_builder.build(response);

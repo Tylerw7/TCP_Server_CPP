@@ -5,47 +5,49 @@
 #include <functional>
 
 #include "Route.h"
-
+#include "HttpResponse.h"
 
 class Router {
 
-    public:
-        void add_route(
-            const std::string& method,
-            const std::string& path,
-            std::function<void()> handler
-        );
+public:
 
-        void get(
-            const std::string& path,
-            std::function<void()> handler
-        );
+    void add_route(
+        const std::string& method,
+        const std::string& path,
+        std::function<HttpResponse()> handler
+    );
 
-        void post(
-            const std::string& path,
-            std::function<void()> handler
-        );
+    void get(
+        const std::string& path,
+        std::function<HttpResponse()> handler
+    );
 
-        void put(
-            const std::string& path,
-            std::function<void()> handler
-        );
+    void post(
+        const std::string& path,
+        std::function<HttpResponse()> handler
+    );
 
-        void patch(
-            const std::string& path,
-            std::function<void()> handler
-        );
+    void put(
+        const std::string& path,
+        std::function<HttpResponse()> handler
+    );
 
-        void delete_route(
-            const std::string& path,
-            std::function<void()> handler
-        );
+    void patch(
+        const std::string& path,
+        std::function<HttpResponse()> handler
+    );
 
-        bool matches(
-            const std::string& method,
-            const std::string& path
-        ) const;
+    void delete_route(
+        const std::string& path,
+        std::function<HttpResponse()> handler
+    );
 
-    private:
-        std::vector<Route> routes;    
+    HttpResponse handle(
+        const std::string& method,
+        const std::string& path
+    );
+
+private:
+
+    std::vector<Route> routes;
 };
