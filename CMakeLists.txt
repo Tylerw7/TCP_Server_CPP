@@ -10,6 +10,7 @@ add_executable(tcp_server
     src/HttpParser.cpp
     src/HttpResponseBuilder.cpp
     src/HttpStatus.cpp
+    src/Router.cpp
 )
 
 target_include_directories(tcp_server
