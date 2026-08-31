@@ -11,7 +11,8 @@ enum class HttpStatus {
     Forbidden = 403,
     NotFound = 404,
     MethodNotAllowed = 405,
-    InternalServerError = 500
+    InternalServerError = 500,
+    NotImplemented = 501
 };
 
 std::string status_text(HttpStatus status);

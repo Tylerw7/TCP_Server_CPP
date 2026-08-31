@@ -29,6 +29,8 @@ void handle_signal(int signal) {
 // Declared functions
 bool send_all(int socket_fd, const char* data, size_t length);
 
+bool recieve_request(int socket_fd, std::string& raw_request);
+
 
 
 int main() {
@@ -301,4 +303,43 @@ bool send_all(int socket_fd, const char* data, size_t length) {
     }
 
     return true;
+}
+
+
+
+bool recieve_request(int socket_fd, std::string& raw_request) {
+    
+    char buffer[4096];
+
+    // Receive until we have the end of the headers
+    while (raw_request.find("\r\n\r\n") == std::string::npos) {
+
+        ssize_t bytes_received = recv(
+            socket_fd,
+            buffer,
+            sizeof(buffer),
+            0
+        );
+
+        if (bytes_received == 0) {
+            return false;
+        }
+
+        if (bytes_received == -1) {
+            std::cerr
+                << "recv() failed: "
+                << strerror(errno)
+                << '\n';
+
+            return false;
+        }
+
+        raw_request.append(
+            buffer,
+            bytes_received
+        );
+    }
+
+    return true;
+
 }

@@ -149,6 +149,13 @@ bool HttpParser::parse(
             header_end + 2;
     }
 
+    // parse body
+    size_t body_start = header_start + 2;
+
+    if (body_start < raw_request.size()) {
+        request.body = raw_request.substr(body_start);
+    }
+
 
     return true;
 }
