@@ -2,12 +2,18 @@
 
 #include <sstream>
 
+
 std::string HttpResponseBuilder::build(
     const HttpResponse& response
 ) {
+
     std::ostringstream output;
 
-    // Status line
+
+    // ---------------------------------------------------------
+    // STATUS LINE
+    // ---------------------------------------------------------
+
     output
         << "HTTP/1.1 "
         << static_cast<int>(response.status)
@@ -15,8 +21,14 @@ std::string HttpResponseBuilder::build(
         << status_text(response.status)
         << "\r\n";
 
-    // Headers
-    for (const auto& header : response.headers) {
+
+    // ---------------------------------------------------------
+    // HEADERS
+    // ---------------------------------------------------------
+
+    for (const auto& header :
+         response.headers) {
+
         output
             << header.first
             << ": "
@@ -24,16 +36,30 @@ std::string HttpResponseBuilder::build(
             << "\r\n";
     }
 
-    output 
+
+    // ---------------------------------------------------------
+    // CONTENT LENGTH
+    // ---------------------------------------------------------
+
+    output
         << "Content-Length: "
         << response.body.size()
         << "\r\n";
 
-    // End of headers
+
+    // ---------------------------------------------------------
+    // END OF HEADERS
+    // ---------------------------------------------------------
+
     output << "\r\n";
 
-    // Body
+
+    // ---------------------------------------------------------
+    // BODY
+    // ---------------------------------------------------------
+
     output << response.body;
+
 
     return output.str();
 }

@@ -5,16 +5,15 @@
 #include <unistd.h>
 #include <cerrno>
 #include <csignal>
+#include <algorithm>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
-
 
 #include "HttpRequest.h"
 #include "HttpParser.h"
 #include "HttpResponseBuilder.h"
 #include "Router.h"
-
 
 // Global Variables
 volatile sig_atomic_t running = true;
@@ -27,31 +26,52 @@ void handle_signal(int signal) {
 
 
 // Declared functions
-bool send_all(int socket_fd, const char* data, size_t length);
-
-bool recieve_request(int socket_fd, std::string& raw_request);
-
+bool send_all(
+    int socket_fd,
+    const char* data,
+    size_t length
+);
 
 
 int main() {
-    
+
     std::signal(SIGINT, handle_signal);
 
-    // What's Happening?
-    // - AF_INET: tells the OS "I want to use IPv4" EX: 127.0.0.1
-    // - SOCK_STREAM: tells OS "I want a stream-oriented socket"
-    // - TCP gives us a reliable, ordered byte stream.
-    // - 0: "Use the default protocol for this socket type."
 
-    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    // ---------------------------------------------------------
+    // CREATE SOCKET
+    // ---------------------------------------------------------
+
+    // AF_INET:
+    // Use IPv4.
+    //
+    // SOCK_STREAM:
+    // Use a TCP stream.
+    //
+    // 0:
+    // Use the default protocol for this socket type.
+
+    int server_fd = socket(
+        AF_INET,
+        SOCK_STREAM,
+        0
+    );
 
     if (server_fd == -1) {
-        std::cerr << "Failed to create socket\n";
+
+        std::cerr
+            << "Failed to create socket\n";
+
         return 1;
     }
 
+
+    // ---------------------------------------------------------
     // SO_REUSEADDR
+    // ---------------------------------------------------------
+
     int opt = 1;
+
     int result = setsockopt(
         server_fd,
         SOL_SOCKET,
@@ -61,24 +81,38 @@ int main() {
     );
 
     if (result == -1) {
-    std::cerr << "Failed to set SO_REUSEADDR\n";
-    return 1;
+
+        std::cerr
+            << "Failed to set SO_REUSEADDR\n";
+
+        close(server_fd);
+
+        return 1;
     }
 
-    // Address structure
+
+    // ---------------------------------------------------------
+    // SERVER ADDRESS
+    // ---------------------------------------------------------
+
     sockaddr_in server_address{};
 
-    // Set the address family
+    // IPv4
     server_address.sin_family = AF_INET;
 
-    // Set the IP Address
-    server_address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    // 127.0.0.1
+    server_address.sin_addr.s_addr =
+        htonl(INADDR_LOOPBACK);
 
-    // Set the Port
-    server_address.sin_port = htons(8080);
+    // Port 8080
+    server_address.sin_port =
+        htons(8080);
 
 
-    // Bind socket to IP + port
+    // ---------------------------------------------------------
+    // BIND
+    // ---------------------------------------------------------
+
     result = bind(
         server_fd,
         (sockaddr*)&server_address,
@@ -86,28 +120,54 @@ int main() {
     );
 
     if (result == -1) {
-        std::cerr << "Failed to bind socket\n";
+
+        std::cerr
+            << "Failed to bind socket\n";
+
+        close(server_fd);
+
         return 1;
     }
 
-    // Start listening
-    result = listen(server_fd, 10);
+
+    // ---------------------------------------------------------
+    // LISTEN
+    // ---------------------------------------------------------
+
+    result = listen(
+        server_fd,
+        10
+    );
 
     if (result == -1) {
-        std::cerr << "Failed to listen on socket\n";
+
+        std::cerr
+            << "Failed to listen on socket\n";
+
+        close(server_fd);
+
         return 1;
     }
 
-    std::cout << "Server listening on http://localhost:8080\n";
 
-    // ------------------------------------
-    // HTTPPARSER & Builder
-    // ------------------------------------
+    std::cout
+        << "Server listening on "
+        << "http://localhost:8080\n";
+
+
+    // ---------------------------------------------------------
+    // HTTP PARSER & RESPONSE BUILDER
+    // ---------------------------------------------------------
+
     HttpParser parser;
+
     HttpResponseBuilder response_builder;
 
 
-    // test routes
+    // ---------------------------------------------------------
+    // ROUTER
+    // ---------------------------------------------------------
+
     Router router;
 
     router.get("/", []() {
@@ -115,27 +175,21 @@ int main() {
         HttpResponse response;
 
         response.status = HttpStatus::OK;
-        response.headers["Content-Type"] = "text/plain";
-        response.body = "Welcome to Tylers server from '/'";
+
+        response.headers["Content-Type"] =
+            "text/plain";
+
+        response.body =
+            "Welcome to Tylers server";
 
         return response;
     });
 
 
-    router.get("/hello", []() {
+    // ---------------------------------------------------------
+    // ACCEPT CLIENTS
+    // ---------------------------------------------------------
 
-        HttpResponse response;
-
-        response.status = HttpStatus::OK;
-        response.headers["Content-Type"] = "text/plain";
-        response.body = "Hello from the /hello route!";
-
-        return response;
-    });
-
-    
-
-    // Keep accepting clients
     while (running) {
 
         int client_fd = accept(
@@ -144,30 +198,46 @@ int main() {
             nullptr
         );
 
+
         if (client_fd == -1) {
 
             if (!running) {
                 break;
             }
 
-            std::cerr << "Failed to accept client\n";
+            std::cerr
+                << "Failed to accept client\n";
+
             continue;
         }
 
-        std::cout << "Client connected!\n";
-        std::cout << "Client socket: " << client_fd << "\n";
 
-        // Buffer for receiving TCP data
+        std::cout
+            << "Client connected!\n";
+
+        std::cout
+            << "Client socket: "
+            << client_fd
+            << "\n";
+
+
+        // -----------------------------------------------------
+        // RECEIVE HTTP REQUEST
+        // -----------------------------------------------------
+
         char buffer[4096];
 
-        // Store the complete HTTP request
         std::string raw_request;
 
-        // Keep receiving until we've received
-        // the end of the HTTP headers.
-        // ------ RECIEVE LOOP ------
-        while (raw_request.find("\r\n\r\n") == std::string::npos) {
 
+        // -----------------------------------------------------
+        // RECEIVE HEADERS
+        // -----------------------------------------------------
+
+        while (
+            raw_request.find("\r\n\r\n")
+            == std::string::npos
+        ) {
 
             ssize_t bytes_received = recv(
                 client_fd,
@@ -176,26 +246,47 @@ int main() {
                 0
             );
 
+
             if (bytes_received == 0) {
-                std::cout << "Client closed connection\n";
+
+                std::cout
+                    << "Client closed connection\n";
+
                 break;
             }
+
 
             if (bytes_received == -1) {
-                std::cerr << "recv() failed: " << strerror(errno) << '\n';
+
+                std::cerr
+                    << "recv() failed: "
+                    << strerror(errno)
+                    << '\n';
+
                 break;
             }
 
-            raw_request.append(buffer, bytes_received);
+
+            raw_request.append(
+                buffer,
+                bytes_received
+            );
         }
+
+
+        // -----------------------------------------------------
+        // PARSE HTTP REQUEST
+        // -----------------------------------------------------
+
         HttpRequest request;
 
-        // Parse HTTP request ------------------------------
+
         bool parsed =
             parser.parse(
                 raw_request,
                 request
             );
+
 
         if (!parsed) {
 
@@ -209,18 +300,110 @@ int main() {
 
 
         // -----------------------------------------------------
+        // GET CONTENT-LENGTH
+        // -----------------------------------------------------
+
+        size_t content_length = 0;
+
+
+        auto content_length_header =
+            request.headers.find(
+                "Content-Length"
+            );
+
+
+        if (
+            content_length_header
+            != request.headers.end()
+        ) {
+
+            content_length =
+                std::stoull(
+                    content_length_header->second
+                );
+        }
+
+
+        // -----------------------------------------------------
+        // RECEIVE REMAINING BODY
+        // -----------------------------------------------------
+
+        size_t body_bytes_received =
+            request.body.size();
+
+
+        while (
+            body_bytes_received
+            < content_length
+        ) {
+
+            size_t remaining =
+                content_length
+                - body_bytes_received;
+
+
+            size_t bytes_to_receive =
+                std::min(
+                    remaining,
+                    sizeof(buffer)
+                );
+
+
+            ssize_t bytes_received = recv(
+                client_fd,
+                buffer,
+                bytes_to_receive,
+                0
+            );
+
+
+            if (bytes_received == 0) {
+
+                std::cerr
+                    << "Client closed connection "
+                    << "before body was complete\n";
+
+                break;
+            }
+
+
+            if (bytes_received == -1) {
+
+                std::cerr
+                    << "recv() failed: "
+                    << strerror(errno)
+                    << '\n';
+
+                break;
+            }
+
+
+            request.body.append(
+                buffer,
+                bytes_received
+            );
+
+
+            body_bytes_received +=
+                bytes_received;
+        }
+
+
+        // -----------------------------------------------------
         // DISPLAY REQUEST
         // -----------------------------------------------------
 
         std::cout
-            << "Method: "
+            << "\nMethod: "
             << request.method
             << '\n';
+
 
         std::cout
             << "Path: "
             << request.path
             << '\n';
+
 
         std::cout
             << "Version: "
@@ -228,10 +411,12 @@ int main() {
             << '\n';
 
 
-        std::cout << "\nHeaders:\n";
+        std::cout
+            << "\nHeaders:\n";
 
 
-        for (const auto& header : request.headers) {
+        for (const auto& header :
+             request.headers) {
 
             std::cout
                 << header.first
@@ -241,19 +426,59 @@ int main() {
         }
 
 
+        std::cout
+            << "\nBody:\n"
+            << request.body
+            << '\n';
+
+
         // -----------------------------------------------------
-        // TEMPORARY HTTP RESPONSE
+        // TEMPORARY RESPONSE
         // -----------------------------------------------------
 
-        HttpResponse response =
-            router.handle(
-                request.method,
-                request.path
+        HttpResponse response;
+
+
+        if (
+            request.method == "GET"
+            && request.path == "/"
+        ) {
+
+            response.status =
+                HttpStatus::OK;
+
+            response.headers["Content-Type"] =
+                "text/plain";
+
+            response.body =
+                "Welcome to Tylers server";
+
+        } else {
+
+            response.status =
+                HttpStatus::NotFound;
+
+            response.headers["Content-Type"] =
+                "text/plain";
+
+            response.body =
+                "404 - Not Found";
+        }
+
+
+        // -----------------------------------------------------
+        // BUILD RESPONSE
+        // -----------------------------------------------------
+
+        std::string response_data =
+            response_builder.build(
+                response
             );
 
-        // Build Response
-        std::string response_data = response_builder.build(response);
 
+        // -----------------------------------------------------
+        // SEND RESPONSE
+        // -----------------------------------------------------
 
         send_all(
             client_fd,
@@ -263,31 +488,42 @@ int main() {
 
 
         // -----------------------------------------------------
-        // CLOSE CLIENT CONNECTION
+        // CLOSE CLIENT
         // -----------------------------------------------------
 
         close(client_fd);
+
 
         std::cout
             << "Client disconnected\n";
     }
 
+
+    // ---------------------------------------------------------
+    // SHUTDOWN SERVER
+    // ---------------------------------------------------------
+
     close(server_fd);
-    
 
     return 0;
 }
 
 
-// ------------------------------------------------------------------------------
-// END OF MAIN FUNCTION
-// START OF HELPER FUNCTIONS
-// ------------------------------------------------------------------------------
+// -------------------------------------------------------------
+// SEND ALL
+// -------------------------------------------------------------
 
+bool send_all(
+    int socket_fd,
+    const char* data,
+    size_t length
+) {
 
-bool send_all(int socket_fd, const char* data, size_t length) {
     size_t total_sent = 0;
+
+
     while (total_sent < length) {
+
         ssize_t bytes_sent = send(
             socket_fd,
             data + total_sent,
@@ -295,51 +531,15 @@ bool send_all(int socket_fd, const char* data, size_t length) {
             0
         );
 
+
         if (bytes_sent <= 0) {
             return false;
         }
 
+
         total_sent += bytes_sent;
     }
 
-    return true;
-}
-
-
-
-bool recieve_request(int socket_fd, std::string& raw_request) {
-    
-    char buffer[4096];
-
-    // Receive until we have the end of the headers
-    while (raw_request.find("\r\n\r\n") == std::string::npos) {
-
-        ssize_t bytes_received = recv(
-            socket_fd,
-            buffer,
-            sizeof(buffer),
-            0
-        );
-
-        if (bytes_received == 0) {
-            return false;
-        }
-
-        if (bytes_received == -1) {
-            std::cerr
-                << "recv() failed: "
-                << strerror(errno)
-                << '\n';
-
-            return false;
-        }
-
-        raw_request.append(
-            buffer,
-            bytes_received
-        );
-    }
 
     return true;
-
 }
