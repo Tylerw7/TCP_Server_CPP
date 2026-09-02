@@ -17,6 +17,7 @@
 
 // Global Variables
 volatile sig_atomic_t running = true;
+constexpr size_t MAX_BODY_SIZE = 1024 * 1024;
 
 
 // Signal Handler
@@ -25,12 +26,16 @@ void handle_signal(int signal) {
 }
 
 
-// Declared functions
+// Function Declarations
 bool send_all(
     int socket_fd,
     const char* data,
     size_t length
 );
+
+bool parse_content_length(const HttpRequest request, size_t& content_length);
+
+
 
 
 int main() {
@@ -305,22 +310,27 @@ int main() {
 
         size_t content_length = 0;
 
+        if (!parse_content_length(
+                request,
+                content_length
+            )) {
 
-        auto content_length_header =
-            request.headers.find(
-                "Content-Length"
-            );
+            std::cerr
+                << "Invalid Content-Length\n";
 
+            close(client_fd);
 
-        if (
-            content_length_header
-            != request.headers.end()
-        ) {
+            continue;
+        }
 
-            content_length =
-                std::stoull(
-                    content_length_header->second
-                );
+        if (content_length > MAX_BODY_SIZE) {
+
+            std::cerr
+                << "Request body too large\n";
+
+            close(client_fd);
+
+            continue;
         }
 
 
@@ -509,6 +519,9 @@ int main() {
 }
 
 
+
+
+
 // -------------------------------------------------------------
 // SEND ALL
 // -------------------------------------------------------------
@@ -542,4 +555,37 @@ bool send_all(
 
 
     return true;
+}
+
+
+bool parse_content_length(const HttpRequest request, size_t& content_length) {
+
+    auto header = request.headers.find("Content-Length");
+
+    // No Content-Length means no body
+    if (header == request.headers.end()) {
+        content_length = 0;
+        return true;
+    }
+
+    try {
+
+        size_t position = 0;
+
+        unsigned long long value =
+            std::stoull(
+                header->second,
+                &position
+            );
+
+        // Make sure the entire value was numeric
+        if (position != header->second.size()) return false;
+
+        content_length = static_cast<size_t>(value);    
+    } catch (...) {
+        return false;
+    }
+
+    return true;
+
 }
