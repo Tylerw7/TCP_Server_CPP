@@ -11,6 +11,7 @@ add_executable(tcp_server
     src/HttpResponseBuilder.cpp
     src/HttpStatus.cpp
     src/Router.cpp
+    src/HttpServer.cpp
 )
 
 target_include_directories(tcp_server
