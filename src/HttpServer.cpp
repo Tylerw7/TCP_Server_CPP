@@ -223,6 +223,20 @@ void HttpServer::handle_client(int client_fd) {
         return response;
     });
 
+    router.get("/hello", []() {
+        HttpResponse response;
+
+        response.status = HttpStatus::Created;
+        response.headers["Content-Type"] =
+            "text/plain";
+
+        response.body =
+            "This is the 'hello' route success!";
+
+        return response;
+
+    });
+
 
     char buffer[4096];
 
@@ -419,35 +433,11 @@ void HttpServer::handle_client(int client_fd) {
         << '\n';
 
 
-    HttpResponse response;
-
-
-    if (
-        request.method == "GET"
-        && request.path == "/"
-    ) {
-
-        response.status =
-            HttpStatus::OK;
-
-        response.headers["Content-Type"] =
-            "text/plain";
-
-        response.body =
-            "Welcome to Tylers server";
-
-    } else {
-
-        response.status =
-            HttpStatus::NotFound;
-
-        response.headers["Content-Type"] =
-            "text/plain";
-
-        response.body =
-            "404 - Not Found";
-    }
-
+    HttpResponse response = 
+        router.handle(
+            request.method,
+            request.path
+        );
 
     std::string response_data =
         response_builder.build(
