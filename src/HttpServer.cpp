@@ -208,7 +208,7 @@ void HttpServer::handle_client(int client_fd) {
 
     Router router;
 
-    router.get("/", []() {
+    router.get("/", [](const HttpRequest& request) {
 
         HttpResponse response;
 
@@ -218,12 +218,14 @@ void HttpServer::handle_client(int client_fd) {
             "text/plain";
 
         response.body =
-            "Welcome to Tylers server";
+            "Method: " + request.method +
+            "\nPath: " + request.path +
+            "\nVersion: " + request.version;
 
         return response;
     });
 
-    router.get("/hello", []() {
+    router.get("/hello", [](const HttpRequest& request) {
         HttpResponse response;
 
         response.status = HttpStatus::Created;
@@ -433,11 +435,8 @@ void HttpServer::handle_client(int client_fd) {
         << '\n';
 
 
-    HttpResponse response = 
-        router.handle(
-            request.method,
-            request.path
-        );
+    HttpResponse response =
+    router.handle(request);
 
     std::string response_data =
         response_builder.build(
