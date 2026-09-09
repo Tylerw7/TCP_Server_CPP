@@ -239,6 +239,22 @@ void HttpServer::handle_client(int client_fd) {
 
     });
 
+    router.post("/echo", [](const HttpRequest& request) {
+
+        HttpResponse response;
+
+        response.status = HttpStatus::OK;
+
+        response.headers["Content-Type"] =
+            "text/plain";
+
+        response.body =
+            "You sent:\n" +
+            request.body;
+
+        return response;
+    });
+
 
     char buffer[4096];
 
