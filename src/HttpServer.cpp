@@ -243,16 +243,25 @@ void HttpServer::handle_client(int client_fd) {
 
         HttpResponse response;
 
-        response.status = HttpStatus::OK;
+        response.headers["Content-Type"] = "plain/text";
 
-        response.headers["Content-Type"] = "application/json";
+        try {
 
-        nlohmann::json json_body = nlohmann::json::parse(request.body);
+            nlohmann::json json_body = nlohmann::json::parse(request.body);
         
-        std::string name = json_body["name"];
-        int age = json_body["age"];
+            std::string name = json_body["name"];
+            int age = json_body["age"];
 
-        response.body = "Name: " + name + " Age: " + std::to_string(age);
+            response.status = HttpStatus::OK;
+
+            response.body = "Name: " + name + " Age: " + std::to_string(age);
+        } catch (const nlohmann::json::exception& error) {
+
+            response.status = HttpStatus::BadRequest;
+
+            response.body =
+                "Invalid JSON";
+        };
 
         return response;
     });
@@ -473,4 +482,4 @@ void HttpServer::handle_client(int client_fd) {
 
     std::cout
         << "Client disconnected\n";
-}
+};
