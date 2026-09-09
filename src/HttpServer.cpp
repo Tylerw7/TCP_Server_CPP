@@ -5,11 +5,11 @@
 #include <cstring>
 #include <cerrno>
 #include <algorithm>
-
 #include <unistd.h>
-
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#include <nlohmann/json.hpp>
 
 #include "HttpRequest.h"
 #include "HttpParser.h"
@@ -245,12 +245,14 @@ void HttpServer::handle_client(int client_fd) {
 
         response.status = HttpStatus::OK;
 
-        response.headers["Content-Type"] =
-            "text/plain";
+        response.headers["Content-Type"] = "application/json";
 
-        response.body =
-            "You sent:\n" +
-            request.body;
+        nlohmann::json json_body = nlohmann::json::parse(request.body);
+        
+        std::string name = json_body["name"];
+        int age = json_body["age"];
+
+        response.body = "Name: " + name + " Age: " + std::to_string(age);
 
         return response;
     });
