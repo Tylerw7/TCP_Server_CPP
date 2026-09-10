@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-
 #include <nlohmann/json.hpp>
 
 #include "HttpRequest.h"
@@ -243,24 +242,22 @@ void HttpServer::handle_client(int client_fd) {
 
         HttpResponse response;
 
-        response.headers["Content-Type"] = "plain/text";
-
         try {
+            nlohmann::json body = request.json();
 
-            nlohmann::json json_body = nlohmann::json::parse(request.body);
-        
-            std::string name = json_body["name"];
-            int age = json_body["age"];
+        std::string name = body.at("name");
+        int age = body.at("age");
 
-            response.status = HttpStatus::OK;
+        nlohmann::json reply;
+        reply["message"] = "Name: " + name + " Age: " + std::to_string(age);
 
-            response.body = "Name: " + name + " Age: " + std::to_string(age);
+        response.status = HttpStatus::OK;
+        response.set_json(reply);
+            
         } catch (const nlohmann::json::exception& error) {
-
             response.status = HttpStatus::BadRequest;
-
-            response.body =
-                "Invalid JSON";
+            response.set_json({{"error", "Invalid JSON"}});
+            
         };
 
         return response;
