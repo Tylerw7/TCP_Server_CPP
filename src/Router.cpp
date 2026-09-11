@@ -1,11 +1,13 @@
-#include "Router.h"
-#include "HttpResponse.h"
-#include "HttpStatus.h"
+#include "http/Router.h"
+#include "http/HttpResponse.h"
+#include "http/HttpStatus.h"
 
 #include <iostream>
 
 
-void Router::add_route(
+namespace http {
+
+    void Router::add_route(
     const std::string& method,
     const std::string& path,
     std::function<HttpResponse(const HttpRequest&)> handler
@@ -77,4 +79,6 @@ HttpResponse Router::handle(
     response.body = "404 - NotFound";
 
     return response;
+}
+
 }

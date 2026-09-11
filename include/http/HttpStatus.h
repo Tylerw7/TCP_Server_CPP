@@ -3,7 +3,9 @@
 #include <string>
 
 
-enum class HttpStatus {
+namespace http {
+
+    enum class HttpStatus {
     OK = 200,
     Created = 201,
     BadRequest = 400,
@@ -16,3 +18,5 @@ enum class HttpStatus {
 };
 
 std::string status_text(HttpStatus status);
+
+}

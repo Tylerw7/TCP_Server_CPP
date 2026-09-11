@@ -10,15 +10,17 @@
 #include <netinet/in.h>
 #include <nlohmann/json.hpp>
 
-#include "HttpRequest.h"
-#include "HttpParser.h"
-#include "HttpResponseBuilder.h"
-#include "Router.h"
-#include "HttpServer.h"
+#include "http/HttpRequest.h"
+#include "http/HttpParser.h"
+#include "http/HttpResponseBuilder.h"
+#include "http/Router.h"
+#include "http/HttpServer.h"
 
 
 
-// Global Variables
+namespace http {
+
+    // Global Variables
 constexpr size_t MAX_BODY_SIZE = 1024 * 1024;
 
 
@@ -480,3 +482,5 @@ void HttpServer::handle_client(int client_fd) {
     std::cout
         << "Client disconnected\n";
 };
+
+}

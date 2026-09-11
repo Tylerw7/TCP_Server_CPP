@@ -4,11 +4,13 @@
 #include <vector>
 #include <functional>
 
-#include "Route.h"
-#include "HttpRequest.h"
-#include "HttpResponse.h"
+#include "http/Route.h"
+#include "http/HttpRequest.h"
+#include "http/HttpResponse.h"
 
-class Router {
+namespace http {
+
+    class Router {
 
 public:
 
@@ -51,3 +53,6 @@ private:
 
     std::vector<Route> routes;
 };
+
+
+}

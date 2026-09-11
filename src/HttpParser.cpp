@@ -1,9 +1,11 @@
-#include "HttpParser.h"
+#include "http/HttpParser.h"
 
 #include <algorithm>
 #include <sstream>
 
-bool is_valid_method(std::string& method) {
+namespace http {
+
+    bool is_valid_method(std::string& method) {
     return method == "GET"
         || method == "POST"
         || method == "PUT"
@@ -158,4 +160,6 @@ bool HttpParser::parse(
 
 
     return true;
+}
+
 }

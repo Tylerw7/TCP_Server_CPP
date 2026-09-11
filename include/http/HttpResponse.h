@@ -4,12 +4,15 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 
-#include "HttpStatus.h"
+#include "http/HttpStatus.h"
 
 // *** data.dump() Serializes the JSON object back into a string.
 
 
-class HttpResponse {
+namespace http {
+
+
+    class HttpResponse {
     public:
         HttpStatus status;
         
@@ -21,3 +24,5 @@ class HttpResponse {
             body = data.dump();
         }
 };
+
+}

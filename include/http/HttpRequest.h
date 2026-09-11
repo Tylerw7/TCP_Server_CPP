@@ -4,7 +4,10 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 
-class HttpRequest {
+namespace http {
+
+
+  class HttpRequest {
 
     public:
       std::string method;
@@ -20,3 +23,5 @@ class HttpRequest {
         return nlohmann::json::parse(body);
       }
 };
+}
+

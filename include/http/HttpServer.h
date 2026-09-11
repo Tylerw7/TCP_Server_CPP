@@ -1,6 +1,8 @@
 #pragma once
 
-class HttpServer {
+namespace http {
+
+    class HttpServer {
 
     public:
 
@@ -16,3 +18,5 @@ class HttpServer {
         void setup();
         void handle_client(int client_fd);    
 };
+
+}

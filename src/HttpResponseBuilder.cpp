@@ -1,9 +1,11 @@
-#include "HttpResponseBuilder.h"
+#include "http/HttpResponseBuilder.h"
 
 #include <sstream>
 
 
-std::string HttpResponseBuilder::build(
+namespace http {
+
+    std::string HttpResponseBuilder::build(
     const HttpResponse& response
 ) {
 
@@ -62,4 +64,6 @@ std::string HttpResponseBuilder::build(
 
 
     return output.str();
+}
+
 }

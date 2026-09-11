@@ -1,8 +1,10 @@
-#include "HttpStatus.h"
+#include "http/HttpStatus.h"
 #include <string>
 
 
-std::string status_text(HttpStatus status) {
+namespace http {
+
+    std::string status_text(HttpStatus status) {
     switch (status) {
         case HttpStatus::OK:
             return "OK";
@@ -31,4 +33,7 @@ std::string status_text(HttpStatus status) {
     }
 
     return "Unknown";
+}
+
+
 }

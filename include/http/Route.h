@@ -3,12 +3,16 @@
 #include <string>
 #include <functional>
 
-#include "HttpResponse.h"
-#include "HttpRequest.h"
+#include "http/HttpResponse.h"
+#include "http/HttpRequest.h"
 
-struct Route {
+namespace http {
+
+    struct Route {
     std::string method;
     std::string path;
 
     std::function<HttpResponse(const HttpRequest&)> handler;
 };
+
+}

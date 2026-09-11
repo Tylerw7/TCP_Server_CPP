@@ -1,11 +1,16 @@
 #pragma once
 
 #include <string>
-#include "HttpRequest.h"
+#include "http/HttpRequest.h"
 
-class HttpParser {
+namespace http {
+
+
+    class HttpParser {
 
     public:
         
         bool parse(const std::string& raw_request, HttpRequest& request);
 };
+}
+
