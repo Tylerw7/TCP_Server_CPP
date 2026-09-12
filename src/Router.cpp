@@ -5,7 +5,9 @@
 #include <iostream>
 
 
-namespace http {
+using namespace http;
+
+
 
     void Router::add_route(
     const std::string& method,
@@ -63,22 +65,38 @@ void Router::delete_route(
 HttpResponse Router::handle(
     const HttpRequest& request
 ) {
-    for (const auto& route : routes) {
+    std::function<HttpResponse(const HttpRequest&)> next =
+        [this](const HttpRequest& req) {
+            for (const auto& route : routes) {
+                if (route.method == req.method &&
+                    route.path == req.path) {
+                    return route.handler(req);
+                }
+            }
 
-        if (route.method == request.method &&
-            route.path == request.path) {
+            HttpResponse response;
+            response.status = HttpStatus::NotFound;
+            response.headers["Content-Type"] = "text/plain";
+            response.body = "404 - NotFound";
+            return response;
+        };
 
-            return route.handler(request);
-        }
+
+    for (auto it = middlewares.rbegin(); it != middlewares.rend(); ++it) {
+        Middleware current = *it;
+        auto previous_next = next;
+        next = [current, previous_next](const HttpRequest& req) {
+            return current(req, previous_next);
+        };
     }
 
-    HttpResponse response;
-
-    response.status = HttpStatus::NotFound;
-    response.headers["Content-Type"] = "text/plain";
-    response.body = "404 - NotFound";
-
-    return response;
+    
+    return next(request);
 }
 
+
+// Middleware "Use"
+
+void Router::use(Middleware middleware) {
+    middlewares.push_back(middleware);
 }
