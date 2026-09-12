@@ -15,6 +15,7 @@ namespace http {
       std::string version;
 
       std::unordered_map<std::string, std::string> headers;
+      std::unordered_map<std::string, std::string> query_params;
 
       std::string body;
 

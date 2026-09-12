@@ -25,9 +25,10 @@ constexpr size_t MAX_BODY_SIZE = 1024 * 1024;
 
 
 
-HttpServer::HttpServer(int port) : server_fd(-1), port(port) {
+HttpServer::HttpServer(int port, Router router)
+    : server_fd(-1), port(port), router(std::move(router)) {
     setup();
-};
+}
 
 
 void HttpServer::setup() {
@@ -207,63 +208,65 @@ void HttpServer::handle_client(int client_fd) {
 
     HttpResponseBuilder response_builder;
 
-    Router router;
+    // ------------- ROUTES ------------------- //
 
-    router.get("/", [](const HttpRequest& request) {
+    // Router router;
 
-        HttpResponse response;
+    // router.get("/", [](const HttpRequest& request) {
 
-        response.status = HttpStatus::OK;
+    //     HttpResponse response;
 
-        response.headers["Content-Type"] =
-            "text/plain";
+    //     response.status = HttpStatus::OK;
 
-        response.body =
-            "Method: " + request.method +
-            "\nPath: " + request.path +
-            "\nVersion: " + request.version;
+    //     response.headers["Content-Type"] =
+    //         "text/plain";
 
-        return response;
-    });
+    //     response.body =
+    //         "Method: " + request.method +
+    //         "\nPath: " + request.path +
+    //         "\nVersion: " + request.version;
 
-    router.get("/hello", [](const HttpRequest& request) {
-        HttpResponse response;
+    //     return response;
+    // });
 
-        response.status = HttpStatus::Created;
-        response.headers["Content-Type"] =
-            "text/plain";
+    // router.get("/hello", [](const HttpRequest& request) {
+    //     HttpResponse response;
 
-        response.body =
-            "This is the 'hello' route success!";
+    //     response.status = HttpStatus::Created;
+    //     response.headers["Content-Type"] =
+    //         "text/plain";
 
-        return response;
+    //     response.body =
+    //         "This is the 'hello' route success!";
 
-    });
+    //     return response;
 
-    router.post("/echo", [](const HttpRequest& request) {
+    // });
 
-        HttpResponse response;
+    // router.post("/echo", [](const HttpRequest& request) {
 
-        try {
-            nlohmann::json body = request.json();
+    //     HttpResponse response;
 
-        std::string name = body.at("name");
-        int age = body.at("age");
+    //     try {
+    //         nlohmann::json body = request.json();
 
-        nlohmann::json reply;
-        reply["message"] = "Name: " + name + " Age: " + std::to_string(age);
+    //     std::string name = body.at("name");
+    //     int age = body.at("age");
 
-        response.status = HttpStatus::OK;
-        response.set_json(reply);
+    //     nlohmann::json reply;
+    //     reply["message"] = "Name: " + name + " Age: " + std::to_string(age);
+
+    //     response.status = HttpStatus::OK;
+    //     response.set_json(reply);
             
-        } catch (const nlohmann::json::exception& error) {
-            response.status = HttpStatus::BadRequest;
-            response.set_json({{"error", "Invalid JSON"}});
+    //     } catch (const nlohmann::json::exception& error) {
+    //         response.status = HttpStatus::BadRequest;
+    //         response.set_json({{"error", "Invalid JSON"}});
             
-        };
+    //     };
 
-        return response;
-    });
+    //     return response;
+    // });
 
 
     char buffer[4096];

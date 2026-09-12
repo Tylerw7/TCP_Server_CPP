@@ -5,7 +5,7 @@
 
 namespace http {
 
-    bool is_valid_method(std::string& method) {
+bool is_valid_method(std::string& method) {
     return method == "GET"
         || method == "POST"
         || method == "PUT"
@@ -14,6 +14,39 @@ namespace http {
         || method == "HEAD"
         || method == "OPTIONS";
 
+}
+
+// Pair parser helper
+void parse_query_string(
+    const std::string& query,
+    std::unordered_map<std::string, std::string>& params
+) {
+    size_t start = 0;
+
+    while (start < query.size()) {
+
+        // Find the end of this pair (next '&' or end of string).
+        size_t amp = query.find('&', start);
+        if (amp == std::string::npos) {
+            amp = query.size();
+        }
+
+        std::string pair = query.substr(start, amp - start);
+
+        // Split the pair on '='.
+        size_t equals = pair.find('=');
+
+        if (equals != std::string::npos) {
+            std::string key = pair.substr(0, equals);
+            std::string value = pair.substr(equals + 1);
+            params[key] = value;
+        } else if (!pair.empty()) {
+            // A key with no '=' (e.g. "?debug") — store with empty value.
+            params[pair] = "";
+        }
+
+        start = amp + 1;
+    }
 }
 
 bool HttpParser::parse(
@@ -77,6 +110,18 @@ bool HttpParser::parse(
     if (request.version != "HTTP/1.1") {
         return false;
     }
+
+    // ---------------------------------------------------------
+    // Split query string off the path
+    // ---------------------------------------------------------
+    size_t question = request.path.find('?');
+
+    if (question != std::string::npos) {
+        std::string query = request.path.substr(question + 1);
+        request.path = request.path.substr(0, question);
+        parse_query_string(query, request.query_params);
+    }
+
 
 
     // ---------------------------------------------------------
