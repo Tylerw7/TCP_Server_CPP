@@ -41,6 +41,7 @@ FetchContent_MakeAvailable(catch2)
 add_executable(tests
     tests/test_parser.cpp
     tests/test_middleware.cpp
+    tests/test_handle_error.cpp
 )
 target_link_libraries(tests PRIVATE server_lib Catch2::Catch2WithMain)
 

@@ -90,8 +90,23 @@ HttpResponse Router::handle(
         };
     }
 
+    // ... Next lambda
+    auto make_500 = []() {
+        HttpResponse response;
+        response.status = HttpStatus::InternalServerError;
+        response.headers["Content-Type"] = "text/plain";
+        response.body = "500 - Internal Server Error";
+        return response;
+    };
+
     
-    return next(request);
+    try {
+        return next(request);
+    } catch (const std::exception& error) {
+        return make_500();
+    } catch (...) {
+        return make_500();
+    }
 }
 
 
