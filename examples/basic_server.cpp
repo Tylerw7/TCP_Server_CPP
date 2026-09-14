@@ -46,6 +46,21 @@ int main() {
             return response;
         });
 
+
+        router.get("/users/:id", [](const HttpRequest& request) {
+            HttpResponse response;
+            response.status = HttpStatus::OK;
+            response.headers["Content-Type"] = "text/plain";
+
+            std::string id = request.path_params.at("id");
+            response.body = "Requested user: " + id;
+
+            return response;
+        });
+
+
+
+
         HttpServer server(8080, router);
         server.run();
 

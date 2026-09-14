@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 
 using namespace http;
@@ -42,6 +43,37 @@ static std::vector<std::string> split_path(const std::string& path) {
     }
 
     return segments;
+}
+
+
+// Matcher
+static bool match_route(
+    const std::string& pattern,
+    const std::string& path,
+    std::unordered_map<std::string, std::string>& params
+) {
+    std::vector<std::string> pattern_parts = split_path(pattern);
+    std::vector<std::string> path_parts = split_path(path);
+
+    if (pattern_parts.size() != path_parts.size()) {
+        return false;
+    }
+
+    std::unordered_map<std::string, std::string> captured;
+
+    for (size_t i = 0; i < pattern_parts.size(); i++) {
+        const std::string& p = pattern_parts[i];
+
+        if (!p.empty() && p[0] == ':') {
+            // Parameter segment - capture the value
+            captured[p.substr(1)] = path_parts[i];
+        } else if (p != path_parts[i]) {
+            return false;
+        }
+    }
+
+    params = captured;
+    return true;
 }
 
 
@@ -91,9 +123,15 @@ HttpResponse Router::handle(
     std::function<HttpResponse(const HttpRequest&)> next =
         [this](const HttpRequest& req) {
             for (const auto& route : routes) {
-                if (route.method == req.method &&
-                    route.path == req.path) {
-                    return route.handler(req);
+                if (route.method != req.method) continue;
+
+                std::unordered_map<std::string, std::string> params;
+
+
+                if (match_route(route.path, req.path, params)) {
+                    HttpRequest matched = req;          // mutable copy
+                    matched.path_params = params;       // attach captured params
+                    return route.handler(matched);
                 }
             }
 

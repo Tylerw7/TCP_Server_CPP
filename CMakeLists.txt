@@ -43,6 +43,7 @@ add_executable(tests
     tests/test_middleware.cpp
     tests/test_handle_error.cpp
     tests/test_params.cpp
+    tests/test_pathParam.cpp
 )
 target_link_libraries(tests PRIVATE server_lib Catch2::Catch2WithMain)
 
