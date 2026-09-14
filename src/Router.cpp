@@ -3,13 +3,15 @@
 #include "http/HttpStatus.h"
 
 #include <iostream>
+#include <vector>
+#include <string>
 
 
 using namespace http;
 
 
 
-    void Router::add_route(
+void Router::add_route(
     const std::string& method,
     const std::string& path,
     std::function<HttpResponse(const HttpRequest&)> handler
@@ -19,6 +21,27 @@ using namespace http;
         path,
         handler
     });
+}
+
+// Segment Matcher
+static std::vector<std::string> split_path(const std::string& path) {
+    std::vector<std::string> segments;
+    size_t start = 0;
+
+    while (start < path.size()) {
+        if (path[start] == '/') {
+            start++;
+            continue;
+        }
+        size_t slash = path.find('/', start);
+        if (slash == std::string::npos) {
+            slash = path.size();
+        }
+        segments.push_back(path.substr(start, slash - start));
+        start = slash;
+    }
+
+    return segments;
 }
 
 
