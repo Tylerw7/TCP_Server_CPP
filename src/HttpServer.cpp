@@ -208,65 +208,6 @@ void HttpServer::handle_client(int client_fd) {
 
     HttpResponseBuilder response_builder;
 
-    // ------------- ROUTES ------------------- //
-
-    // Router router;
-
-    // router.get("/", [](const HttpRequest& request) {
-
-    //     HttpResponse response;
-
-    //     response.status = HttpStatus::OK;
-
-    //     response.headers["Content-Type"] =
-    //         "text/plain";
-
-    //     response.body =
-    //         "Method: " + request.method +
-    //         "\nPath: " + request.path +
-    //         "\nVersion: " + request.version;
-
-    //     return response;
-    // });
-
-    // router.get("/hello", [](const HttpRequest& request) {
-    //     HttpResponse response;
-
-    //     response.status = HttpStatus::Created;
-    //     response.headers["Content-Type"] =
-    //         "text/plain";
-
-    //     response.body =
-    //         "This is the 'hello' route success!";
-
-    //     return response;
-
-    // });
-
-    // router.post("/echo", [](const HttpRequest& request) {
-
-    //     HttpResponse response;
-
-    //     try {
-    //         nlohmann::json body = request.json();
-
-    //     std::string name = body.at("name");
-    //     int age = body.at("age");
-
-    //     nlohmann::json reply;
-    //     reply["message"] = "Name: " + name + " Age: " + std::to_string(age);
-
-    //     response.status = HttpStatus::OK;
-    //     response.set_json(reply);
-            
-    //     } catch (const nlohmann::json::exception& error) {
-    //         response.status = HttpStatus::BadRequest;
-    //         response.set_json({{"error", "Invalid JSON"}});
-            
-    //     };
-
-    //     return response;
-    // });
 
 
     char buffer[4096];
@@ -463,6 +404,8 @@ void HttpServer::handle_client(int client_fd) {
         << request.body
         << '\n';
 
+
+    request.parse_form_body();
 
     HttpResponse response =
     router.handle(request);

@@ -59,6 +59,19 @@ int main() {
         });
 
 
+        router.post("/submit", [](const HttpRequest& request) {
+            HttpResponse response;
+            response.status = HttpStatus::OK;
+            response.headers["Content-Type"] = "text/plain";
+
+            auto it = request.form_params.find("name");
+            std::string name = (it != request.form_params.end()) ? it->second : "(none)";
+
+            response.body = "Form submitted by: " + name;
+            return response;
+        });
+
+
 
 
         HttpServer server(8080, router);
