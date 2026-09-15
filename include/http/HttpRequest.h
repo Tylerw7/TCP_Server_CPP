@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 
-#include "http/HttpParser.h"
+
 
 namespace http {
 
@@ -25,10 +25,6 @@ namespace http {
 
       void parse_form_body();
 
-      void parse_query_string(
-          const std::string& query,
-          std::unordered_map<std::string, std::string>& params
-      );
 
       // Parse the body as JSON. Throws nlohmann::json::parse_error on bad input.
       nlohmann::json json() const {

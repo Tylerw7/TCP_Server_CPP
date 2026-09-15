@@ -20,6 +20,7 @@ add_library(server_lib
     src/HttpStatus.cpp
     src/Router.cpp
     src/HttpServer.cpp
+    src/HttpRequest.cpp
 )
 
 target_include_directories(server_lib PUBLIC include)
