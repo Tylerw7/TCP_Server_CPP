@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <nlohmann/json.hpp>
+#include <thread>
 
 #include "http/HttpRequest.h"
 #include "http/HttpParser.h"
@@ -103,6 +104,7 @@ void HttpServer::setup() {
 }
 
 
+
 void HttpServer::run() {
 
     while (true) {
@@ -124,7 +126,13 @@ void HttpServer::run() {
         std::cout
             << "Client connected\n";
 
-        handle_client(client_fd);
+        std::thread client_thread(
+            &HttpServer::handle_client,
+            this,
+            client_fd
+        );
+
+        client_thread.detach();
     }
 }
 
