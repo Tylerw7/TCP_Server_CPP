@@ -31,7 +31,9 @@ HttpServer::HttpServer(int port, Router router)
     setup();
 }
 
-
+// -------------------------------------------------
+// SETUP
+// -------------------------------------------------
 void HttpServer::setup() {
 
     server_fd = socket(
@@ -104,7 +106,35 @@ void HttpServer::setup() {
 }
 
 
+// -------------------------------------------------
+// SHOULD KEEP ALIVE
+// -------------------------------------------------
+bool should_keep_alive(const HttpRequest& request) {
+    auto it = request.headers.find("Connections");
 
+    if (it != request.headers.end()) {
+        std::string value = it->second;
+
+        // Lowercase for a case-insensitive compare.
+        std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+
+        if (value == 'close') {
+            return false;
+        }
+        if (value == "keep-alive") {
+            return true;
+        }
+    }
+
+    // HTTP/1.1 defaults to keep-alive when no header says otherwise.
+    return request.version == "HTTP/1.1";
+}
+
+
+
+// -------------------------------------------------
+// RUN
+// -------------------------------------------------
 void HttpServer::run() {
 
     while (true) {
