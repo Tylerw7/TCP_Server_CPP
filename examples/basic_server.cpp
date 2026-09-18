@@ -3,6 +3,10 @@
 #include "http/HttpServer.h"
 #include "http/Router.h"
 
+#include <nlohmann/json.hpp>
+
+
+
 using namespace http;
 
 int main() {
@@ -17,6 +21,32 @@ int main() {
             return response;
         });
 
+
+        router.get("/api/status", [](const HttpRequest& request) {
+            nlohmann::json data;
+            data["service"] = "my-framework";
+            data["status"] = "ok";
+            data["version"] = "1.0";
+
+            return HttpResponse::json(HttpStatus::OK, data);
+        });
+
+
+        router.get("/api/users/:id", [](const HttpRequest& request) {
+            std::string id = request.path_params.at("id");
+
+            if (id != "42") {
+                return HttpResponse::error(HttpStatus::NotFound, "user not found");
+            }
+
+            nlohmann::json user;
+            user["id"] = id;
+            user["name"] = "Tyler";
+
+            return HttpResponse::json(HttpStatus::OK, user);
+        });
+
+
         router.get("/search", [](const HttpRequest& request) {
             HttpResponse response;
             response.status = HttpStatus::OK;
@@ -26,23 +56,6 @@ int main() {
             std::string term = (it != request.query_params.end()) ? it->second : "(none)";
 
             response.body = "You searched for: " + term;
-            return response;
-        });
-
-        router.get("/", [](const HttpRequest& request) {
-
-            HttpResponse response;
-
-            response.status = HttpStatus::OK;
-
-            response.headers["Content-Type"] =
-                "text/plain";
-
-            response.body =
-                "Method: " + request.method +
-                "\nPath: " + request.path +
-                "\nVersion: " + request.version;
-
             return response;
         });
 

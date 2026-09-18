@@ -45,6 +45,8 @@ add_executable(tests
     tests/test_handle_error.cpp
     tests/test_params.cpp
     tests/test_pathParam.cpp
+    tests/test_body.cpp
+    tests/test_json_response.cpp
 )
 target_link_libraries(tests PRIVATE server_lib Catch2::Catch2WithMain)
 
