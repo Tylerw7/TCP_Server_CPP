@@ -4,6 +4,8 @@
 #include "http/Router.h"
 
 #include <nlohmann/json.hpp>
+#include <chrono>
+#include <thread>
 
 
 
@@ -81,6 +83,15 @@ int main() {
             std::string name = (it != request.form_params.end()) ? it->second : "(none)";
 
             response.body = "Form submitted by: " + name;
+            return response;
+        });
+
+
+        router.get("/slow", [](const HttpRequest& request) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            HttpResponse response;
+            response.status = HttpStatus::OK;
+            response.body = "done";
             return response;
         });
 
