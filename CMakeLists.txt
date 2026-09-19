@@ -21,6 +21,7 @@ add_library(server_lib
     src/Router.cpp
     src/HttpServer.cpp
     src/HttpRequest.cpp
+    src/HttpsServer.cpp
 )
 
 target_include_directories(server_lib PUBLIC include)
@@ -29,6 +30,14 @@ target_link_libraries(server_lib PUBLIC nlohmann_json::nlohmann_json)
 # Example usage — this is what a user's server looks like.
 add_executable(basic_server examples/basic_server.cpp)
 target_link_libraries(basic_server PRIVATE server_lib)
+
+find_package(OpenSSL REQUIRED)
+target_link_libraries(server_lib PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+
+
+# SECURE SERVER
+add_executable(secure_server examples/secure_server.cpp)
+target_link_libraries(secure_server PRIVATE server_lib)
 
 # ---- Testing ----
 enable_testing()

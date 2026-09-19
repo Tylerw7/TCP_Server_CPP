@@ -2,3 +2,5 @@ build/
 main
 .vscode
 .idea
+cert.pem
+key.pem
