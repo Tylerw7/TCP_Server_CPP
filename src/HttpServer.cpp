@@ -110,7 +110,7 @@ void HttpServer::setup() {
 // SHOULD KEEP ALIVE
 // -------------------------------------------------
 bool should_keep_alive(const HttpRequest& request) {
-    auto it = request.headers.find("Connections");
+    auto it = request.headers.find("Connection");
 
     if (it != request.headers.end()) {
         std::string value = it->second;
@@ -118,7 +118,7 @@ bool should_keep_alive(const HttpRequest& request) {
         // Lowercase for a case-insensitive compare.
         std::transform(value.begin(), value.end(), value.begin(), ::tolower);
 
-        if (value == 'close') {
+        if (value == "close") {
             return false;
         }
         if (value == "keep-alive") {
@@ -243,228 +243,112 @@ bool parse_content_length(
 void HttpServer::handle_client(int client_fd) {
 
     HttpParser parser;
-
     HttpResponseBuilder response_builder;
 
-
-
     char buffer[4096];
+    std::string leftover;   // bytes read but not yet consumed
 
-    std::string raw_request;
+    while (true) {
 
+        // --- Read until we have a full header section ---
+        std::string raw_request = leftover;
+        leftover.clear();
 
-    while (
-        raw_request.find("\r\n\r\n")
-        == std::string::npos
-    ) {
+        while (raw_request.find("\r\n\r\n") == std::string::npos) {
 
-        ssize_t bytes_received = recv(
-            client_fd,
-            buffer,
-            sizeof(buffer),
-            0
-        );
+            ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer), 0);
 
-        if (bytes_received == 0) {
+            if (bytes_received == 0) {
+                // Client closed the connection — normal for keep-alive.
+                close(client_fd);
+                return;
+            }
 
-            std::cout
-                << "Client closed connection\n";
+            if (bytes_received == -1) {
+                std::cerr << "recv() failed: " << strerror(errno) << '\n';
+                close(client_fd);
+                return;
+            }
 
+            raw_request.append(buffer, bytes_received);
+        }
+
+        // --- Parse the request ---
+        HttpRequest request;
+
+        if (!parser.parse(raw_request, request)) {
+            std::cerr << "Failed to parse HTTP request\n";
             close(client_fd);
-
             return;
         }
 
-        if (bytes_received == -1) {
+        // --- Read the body per Content-Length ---
+        size_t content_length = 0;
 
-            std::cerr
-                << "recv() failed: "
-                << strerror(errno)
-                << '\n';
-
+        if (!parse_content_length(request, content_length)) {
+            std::cerr << "Invalid Content-Length\n";
             close(client_fd);
-
             return;
         }
 
-        raw_request.append(
-            buffer,
-            bytes_received
-        );
-    }
-
-
-    HttpRequest request;
-
-    bool parsed =
-        parser.parse(
-            raw_request,
-            request
-        );
-
-
-    if (!parsed) {
-
-        std::cerr
-            << "Failed to parse HTTP request\n";
-
-        close(client_fd);
-
-        return;
-    }
-
-
-    size_t content_length = 0;
-
-    if (!parse_content_length(
-            request,
-            content_length
-        )) {
-
-        std::cerr
-            << "Invalid Content-Length\n";
-
-        close(client_fd);
-
-        return;
-    }
-
-
-    if (content_length > MAX_BODY_SIZE) {
-
-        std::cerr
-            << "Request body too large\n";
-
-        close(client_fd);
-
-        return;
-    }
-
-
-    size_t body_bytes_received =
-        request.body.size();
-
-
-    while (
-        body_bytes_received
-        < content_length
-    ) {
-
-        size_t remaining =
-            content_length
-            - body_bytes_received;
-
-
-        size_t bytes_to_receive =
-            std::min(
-                remaining,
-                sizeof(buffer)
-            );
-
-
-        ssize_t bytes_received = recv(
-            client_fd,
-            buffer,
-            bytes_to_receive,
-            0
-        );
-
-
-        if (bytes_received == 0) {
-
-            std::cerr
-                << "Client closed connection "
-                << "before body was complete\n";
-
+        if (content_length > MAX_BODY_SIZE) {
+            std::cerr << "Request body too large\n";
             close(client_fd);
-
             return;
         }
 
+        size_t body_bytes_received = request.body.size();
 
-        if (bytes_received == -1) {
+        while (body_bytes_received < content_length) {
+            size_t remaining = content_length - body_bytes_received;
+            size_t bytes_to_receive = std::min(remaining, sizeof(buffer));
 
-            std::cerr
-                << "recv() failed: "
-                << strerror(errno)
-                << '\n';
+            ssize_t bytes_received = recv(client_fd, buffer, bytes_to_receive, 0);
 
+            if (bytes_received == 0) {
+                std::cerr << "Client closed before body was complete\n";
+                close(client_fd);
+                return;
+            }
+
+            if (bytes_received == -1) {
+                std::cerr << "recv() failed: " << strerror(errno) << '\n';
+                close(client_fd);
+                return;
+            }
+
+            request.body.append(buffer, bytes_received);
+            body_bytes_received += bytes_received;
+        }
+
+        // --- Any bytes past this request belong to the NEXT one ---
+        // (For simple cases there usually aren't any, but a pipelined
+        //  client may have sent more. We don't split those out here;
+        //  see the note below.)
+
+        request.parse_form_body();
+
+        // --- Decide keep-alive and route ---
+        bool keep_alive = should_keep_alive(request);
+
+        HttpResponse response = router.handle(request);
+
+        response.headers["Connection"] =
+            keep_alive ? "keep-alive" : "close";
+
+        std::string response_data = response_builder.build(response);
+
+        if (!send_all(client_fd, response_data.c_str(), response_data.size())) {
             close(client_fd);
-
             return;
         }
 
-
-        request.body.append(
-            buffer,
-            bytes_received
-        );
-
-
-        body_bytes_received +=
-            bytes_received;
+        // --- Close or loop for the next request ---
+        if (!keep_alive) {
+            close(client_fd);
+            return;
+        }
     }
-
-
-    std::cout
-        << "\nMethod: "
-        << request.method
-        << '\n';
-
-    std::cout
-        << "Path: "
-        << request.path
-        << '\n';
-
-    std::cout
-        << "Version: "
-        << request.version
-        << '\n';
-
-
-    std::cout
-        << "\nHeaders:\n";
-
-
-    for (const auto& header :
-         request.headers) {
-
-        std::cout
-            << header.first
-            << " = "
-            << header.second
-            << '\n';
-    }
-
-
-    std::cout
-        << "\nBody:\n"
-        << request.body
-        << '\n';
-
-
-    request.parse_form_body();
-
-    HttpResponse response =
-    router.handle(request);
-
-    std::string response_data =
-        response_builder.build(
-            response
-        );
-
-
-    send_all(
-        client_fd,
-        response_data.c_str(),
-        response_data.size()
-    );
-
-
-    close(client_fd);
-
-    std::cout
-        << "Client disconnected\n";
-};
+}
 
 }
