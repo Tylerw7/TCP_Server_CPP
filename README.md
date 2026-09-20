@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="dashapi_logo_preview.png" alt="DashAPI" width="380">
+  <img src="dashapi_logo_preview.png" alt="DashAPI" width="500">
 </p>
 
 # DashAPI
