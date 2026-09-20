@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="dashapi-logo.svg" alt="DashAPI" width="380">
+</p>
+
 # DashAPI
 
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?style=flat&logo=cplusplus&logoColor=white)
@@ -16,7 +20,8 @@ with no heavyweight dependencies and a small, readable codebase you can actually
 end to end.
 
 It is designed to be embedded in your own project: define your routes in your own `main()`,
-link against the library, and ship a real HTTP or HTTPS service.
+link against the library, and ship a real HTTP or HTTPS service. Everything is available
+through a single include — `#include <dashapi/dashapi.h>` — under the `dashapi` namespace.
 
 ---
 
@@ -29,6 +34,7 @@ link against the library, and ship a real HTTP or HTTPS service.
 - [Installation & Build](#installation--build)
 - [Quick Start](#quick-start)
 - [Core Concepts](#core-concepts)
+  - [The Include & Namespace](#the-include--namespace)
   - [The Router](#the-router)
   - [Requests](#requests)
   - [Responses](#responses)
@@ -75,6 +81,7 @@ Drogon. For high-scale public traffic you would typically run DashAPI behind a r
 
 ## Features
 
+- **Single-include** — `#include <dashapi/dashapi.h>` brings in the whole framework under the `dashapi` namespace.
 - **Express-style routing** — `router.get("/path", handler)`, `.post`, `.put`, `.patch`, `.delete_route`.
 - **Path parameters** — `/users/:id`, captured into `request.path_params`.
 - **Query parameters** — `/search?q=cats`, parsed into `request.query_params`.
@@ -192,10 +199,9 @@ After building, the example binaries are in `build/`:
 A minimal server:
 
 ```cpp
-#include "http/HttpServer.h"
-#include "http/Router.h"
+#include <dashapi/dashapi.h>
 
-using namespace http;
+using namespace dashapi;
 
 int main() {
     Router router;
@@ -227,6 +233,26 @@ of the router and serves requests concurrently, so nothing should be added to it
 ---
 
 ## Core Concepts
+
+### The Include & Namespace
+
+Everything in DashAPI is available through one header:
+
+```cpp
+#include <dashapi/dashapi.h>
+```
+
+This single include pulls in the request and response types, status codes, the router, and both
+the HTTP and HTTPS servers. All of the framework's types live in the `dashapi` namespace, so you
+can either qualify them (`dashapi::Router`) or bring them into scope with:
+
+```cpp
+using namespace dashapi;
+```
+
+Every example in this document assumes the single include and `using namespace dashapi;`. The
+individual headers (`<http/Router.h>`, etc.) still exist under the hood, but the umbrella header
+is the intended entry point.
 
 ### The Router
 
@@ -605,6 +631,10 @@ This is why the API is shaped the way it is — you build the router in `main()`
 > **Logging caveat:** because threads share `std::cout`, log lines from concurrent requests can
 > interleave. This is cosmetic and does not affect correctness.
 
+> **Shared state:** DashAPI's router is safe to share across threads, but any of *your own*
+> mutable state touched inside handlers (a cache, an in-memory store) is not automatically —
+> guard it with a `std::mutex` if concurrent requests can modify it.
+
 ---
 
 ## Keep-Alive
@@ -654,10 +684,9 @@ own certificate (for example from Let's Encrypt).
 ### 2. Run an HTTPS server
 
 ```cpp
-#include "http/HttpsServer.h"
-#include "http/Router.h"
+#include <dashapi/dashapi.h>
 
-using namespace http;
+using namespace dashapi;
 
 int main() {
     Router router;
@@ -698,6 +727,9 @@ validates that the private key matches the certificate and throws a descriptive 
 ---
 
 ## Full API Reference
+
+All types below are in the `dashapi` namespace and are available through
+`#include <dashapi/dashapi.h>`.
 
 ### `class Router`
 
@@ -788,9 +820,9 @@ Tests are plain Catch2. For example:
 
 ```cpp
 #include <catch2/catch_test_macros.hpp>
-#include "http/Router.h"
+#include <dashapi/dashapi.h>
 
-using namespace http;
+using namespace dashapi;
 
 TEST_CASE("Path parameter is captured", "[params]") {
     Router router;
@@ -824,10 +856,13 @@ DashAPI/
 ├── CMakeLists.txt
 ├── README.md
 ├── LICENSE
+├── dashapi-logo.svg
 ├── cert.pem                 # dev only, git-ignored
 ├── key.pem                  # dev only, git-ignored
 ├── include/
-│   └── http/                # public headers — the framework's API surface
+│   ├── dashapi/
+│   │   └── dashapi.h        # umbrella header — the intended entry point
+│   └── http/                # underlying public headers
 │       ├── HttpRequest.h
 │       ├── HttpResponse.h
 │       ├── HttpParser.h
@@ -859,8 +894,9 @@ DashAPI/
     └── test_keepalive.cpp
 ```
 
-Public headers live under `include/http/`, so consumers include them as `#include <http/Router.h>`.
-Everything is in the `http` namespace.
+Include the framework with `#include <dashapi/dashapi.h>` — the umbrella header re-exports the
+underlying types (which live in the `http` namespace) into the `dashapi` namespace, so your code
+uses `dashapi::Router`, `dashapi::HttpServer`, and so on.
 
 ---
 
@@ -875,6 +911,8 @@ Planned and possible future work:
 - **Structured, thread-safe logging** to replace raw `std::cout`.
 - **CMake install target** so the library can be consumed via `find_package` / `FetchContent`.
 - **Route groups / prefixes** (e.g. mounting a set of routes under `/api`).
+- **An `App` facade** — an optional single object bundling the router and server
+  (`App app; app.get(...); app.listen(8080);`) for an even more concise entry point.
 
 ---
 
